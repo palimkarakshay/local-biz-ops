@@ -18,6 +18,23 @@ no GitHub/Resend/GBP credentials live in Next.js, only inside n8n + the admin.
 | `02-job-complete-review-request.json` | Webhook → Verify HMAC → Wait → review request → ACK | When a job is marked complete, waits, then fires the Google Business Profile review request (idempotent). |
 | `03-invoice-reminder.json` | Schedule (daily) → get overdue → fan out → reminder | Sends an escalating reminder for each invoice that crosses a `reminderDays` checkpoint. |
 
+## Editing via the n8n MCP
+
+The repo's `.mcp.json` wires an **n8n MCP server**, so the agent can now **read
+AND edit** all three workflows directly — lead intake
+(`01-web-lead-to-crm.json`), the job-complete review request
+(`02-job-complete-review-request.json`), and the invoice reminder
+(`03-invoice-reminder.json`) — without hand-editing the exported JSON.
+
+> **Hard rule — never touch a production-published workflow.** The agent only
+> edits an **unpublished / draft version**; the operator reviews and **publishes
+> manually**. These three workflows are live revenue/communication paths, so a
+> bad publish silently breaks lead intake, review requests, or invoicing. Edit
+> the draft, hand off, let the operator publish.
+
+The JSON files in this folder remain the importable source of truth; keep them
+in sync with any workflow you edit through the MCP.
+
 ## How to import
 
 1. n8n → top-right **Import from File** → select the JSON.
