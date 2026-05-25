@@ -1,0 +1,29 @@
+{
+  "vertical": "commercial-print-signage",
+  "label": "Commercial Print / Signage",
+  "intents": [
+    { "value": "rfq", "label": "Request for quote", "priority": "P1" },
+    { "value": "rush", "label": "Rush job", "priority": "P1" },
+    { "value": "reorder", "label": "Reorder", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "rfq", "label": "RFQ" },
+    { "id": "quote", "label": "Quote" },
+    { "id": "proof", "label": "Proof" },
+    { "id": "production", "label": "Production" },
+    { "id": "delivered", "label": "Delivered" },
+    { "id": "won", "label": "Won", "terminal": true },
+    { "id": "lost", "label": "Lost", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "truthfulClaimsOnly": true },
+    "regulators": [],
+    "notes": "Truthful capability / turnaround claims only. Respect client artwork / IP. Production starts only after a signed-off proof."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 1 },
+  "invoice": {
+    "reminderDays": [3, 7, 14],
+    "repurposedAs": "deposit on approval + balance on delivery, then reorder reminders"
+  }
+}

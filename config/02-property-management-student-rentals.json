@@ -1,0 +1,28 @@
+{
+  "vertical": "property-management-student-rentals",
+  "label": "Property Management / Student Rentals",
+  "intents": [
+    { "value": "viewing", "label": "Book a viewing", "priority": "P1" },
+    { "value": "application", "label": "Rental application", "priority": "P2" },
+    { "value": "maintenance", "label": "Maintenance request", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "inquiry", "label": "Inquiry" },
+    { "id": "viewing-booked", "label": "Viewing booked" },
+    { "id": "application", "label": "Application" },
+    { "id": "lease-signed", "label": "Lease signed" },
+    { "id": "tenant", "label": "Tenant" },
+    { "id": "moved-out", "label": "Moved out", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "humanRightsCode": true, "secureIntakeLink": true },
+    "regulators": ["Ontario RTA", "Standard Lease (Form 2229E)"],
+    "notes": "No Human Rights Code prohibited questions in any templated message or application. RTA-compliant late-rent wording (no threats)."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 10 },
+  "invoice": {
+    "reminderDays": [-3, 1, 5],
+    "repurposedAs": "rent due (before the 1st) + late-rent notice (after), RTA-respecting"
+  }
+}

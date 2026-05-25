@@ -1,0 +1,30 @@
+{
+  "vertical": "contract-manufacturing-machine-shop",
+  "label": "Contract Manufacturer / Machine Shop",
+  "intents": [
+    { "value": "rfq", "label": "RFQ (part / drawing)", "priority": "P1" },
+    { "value": "nda", "label": "NDA before files", "priority": "P1" },
+    { "value": "capability", "label": "Capability question", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "rfq", "label": "RFQ" },
+    { "id": "nda", "label": "NDA" },
+    { "id": "quote", "label": "Quote" },
+    { "id": "po", "label": "PO" },
+    { "id": "production", "label": "Production" },
+    { "id": "shipped", "label": "Shipped" },
+    { "id": "won", "label": "Won", "terminal": true },
+    { "id": "lost", "label": "Lost", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "ndaBeforeFiles": true, "secureIntakeLink": true, "reviewNeedsApproval": true, "truthfulClaimsOnly": true },
+    "regulators": ["ISO 9001 / IATF 16949 / AS9100 (TODO until verified)", "OHSA / WSIB"],
+    "notes": "Never invite proprietary files/specs into open email — offer the NDA first + a secure upload. Truthful certification claims only. Default the 'review' to a private reference request; public review optional + gated. Note controlled-goods/export handling only if applicable."
+  },
+  "reviewRequest": { "enabled": false, "trigger": "job-complete", "delayDays": 3 },
+  "invoice": {
+    "reminderDays": [30, 45, 60],
+    "repurposedAs": "PO-based net-terms invoicing (net-30/60) + reorder / blanket-PO nudge"
+  }
+}

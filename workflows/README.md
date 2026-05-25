@@ -59,6 +59,24 @@ no GitHub/Resend/GBP credentials live in Next.js, only inside n8n + the admin.
   skips if already sent; invoice reminders record a `day-N` checkpoint), so a
   retried webhook never double-sends.
 
+## Verify locally without n8n
+
+`verify-dispatch.mjs` is a stand-in for a live run of workflow (a): it
+HMAC-signs a lead and POSTs it to the admin's `/api/leads` exactly as the
+workflow does, so you can confirm the **signed webhook → CRM row → follow-up**
+chain before importing anything into n8n.
+
+```bash
+# admin running with the same secret (production build, so the bot-check is active):
+OPS_HMAC_SECRET=dev-secret npm run start            # in admin/
+OPS_HMAC_SECRET=dev-secret OPS_INTAKE_URL=http://localhost:3000 \
+  node workflows/verify-dispatch.mjs
+```
+
+Expect a valid signature → `200` + a new CRM row with the follow-up fired, and a
+tampered body → `403`. The admin's `verifyOpsSignature` uses the identical
+algorithm to each workflow's **Verify HMAC** node — keep them in lockstep.
+
 ## Replication for a new client
 
 Each client gets its own bundle (own admin URL, own secrets):

@@ -1,0 +1,29 @@
+{
+  "vertical": "professional-services",
+  "label": "Professional Services (Law / Accounting / Consulting)",
+  "intents": [
+    { "value": "consultation", "label": "Book a consultation", "priority": "P1" },
+    { "value": "intake", "label": "Secure intake", "priority": "P2" },
+    { "value": "quote", "label": "Fee / scope question", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "inquiry", "label": "Inquiry" },
+    { "id": "consult-booked", "label": "Consult booked" },
+    { "id": "engaged", "label": "Engaged" },
+    { "id": "matter-active", "label": "Matter active" },
+    { "id": "matter-complete", "label": "Matter complete" },
+    { "id": "won", "label": "Won", "terminal": true },
+    { "id": "lost", "label": "Lost", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "secureIntakeLink": true, "reviewNeedsApproval": true, "truthfulClaimsOnly": true },
+    "regulators": ["LSO (law) or CPA Ontario number"],
+    "notes": "State 'no professional relationship via this form/email' + 'results may vary'. Do NOT invite privileged details by email. LSO/CPA advertising rules constrain testimonials — keep the review ask factual and gate it behind approval."
+  },
+  "reviewRequest": { "enabled": false, "trigger": "job-complete", "delayDays": 3 },
+  "invoice": {
+    "reminderDays": [7, 14, 30],
+    "repurposedAs": "retainer request + interim/final billing reminders"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "vertical": "managed-it-services",
+  "label": "Managed IT Services (MSP)",
+  "intents": [
+    { "value": "support", "label": "Support (existing client)", "priority": "P1" },
+    { "value": "assessment", "label": "Free IT assessment", "priority": "P1" },
+    { "value": "discovery", "label": "Sales discovery call", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "inquiry", "label": "Inquiry" },
+    { "id": "discovery", "label": "Discovery" },
+    { "id": "proposal", "label": "Proposal" },
+    { "id": "onboarding", "label": "Onboarding" },
+    { "id": "client", "label": "Client", "terminal": true },
+    { "id": "churned", "label": "Churned", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "truthfulClaimsOnly": true },
+    "regulators": ["PIPEDA"],
+    "notes": "Route 'support' to the ticketing inbox with an SLA expectation — not the sales sequence. Truthful certification/partner claims only."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 7 },
+  "invoice": {
+    "reminderDays": [3, 7, 14, 60],
+    "repurposedAs": "monthly managed-plan billing + renewal reminder before the anniversary"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "vertical": "health-dental-clinic",
+  "label": "Health / Dental Clinic",
+  "intents": [
+    { "value": "new-patient", "label": "New patient", "priority": "P1" },
+    { "value": "booking", "label": "Appointment request", "priority": "P1" },
+    { "value": "treatment", "label": "Treatment question", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "inquiry", "label": "Inquiry" },
+    { "id": "booked", "label": "Booked" },
+    { "id": "seen", "label": "Seen" },
+    { "id": "recall-due", "label": "Recall due" },
+    { "id": "won", "label": "Active patient", "terminal": true },
+    { "id": "lost", "label": "Lost", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "phipa": true, "secureIntakeLink": true, "reviewNeedsApproval": true },
+    "regulators": ["RCDSO / CPSO / College of Physiotherapists / CCO (per discipline)"],
+    "notes": "PHIPA: never collect or echo health info in email — link to a secure intake. College advertising rules constrain testimonials/outcome claims; keep the review ask factual and gate behind clinician approval."
+  },
+  "reviewRequest": { "enabled": false, "trigger": "job-complete", "delayDays": 1 },
+  "invoice": {
+    "reminderDays": [7, 14, 30],
+    "repurposedAs": "patient balance after insurance + 6-month recall reminders"
+  }
+}

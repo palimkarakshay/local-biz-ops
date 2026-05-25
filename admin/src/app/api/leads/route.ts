@@ -3,6 +3,7 @@ import { leadIntakeSchema } from "@/lib/schemas";
 import { opsConfig } from "@/lib/ops-config";
 import { appendLead, createLead, markFollowUp, markReviewRequest, readLeads, recordEvent } from "@/lib/crm";
 import { sendFollowUp, sendOperatorNotification, sendReviewRequest, verifyTurnstile } from "@/lib/mail";
+import { verifyOpsSignature } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,9 +20,12 @@ export async function GET() {
  * in motion.
  */
 export async function POST(request: Request) {
+  // Read the raw body so an HMAC signature (if present) can be verified over
+  // the exact bytes, matching the n8n workflow's Verify HMAC node.
+  const raw = await request.text();
   let body: unknown;
   try {
-    body = await request.json();
+    body = JSON.parse(raw);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
@@ -35,12 +39,19 @@ export async function POST(request: Request) {
   }
   const intake = parsed.data;
 
-  // Auth: trusted server callers (the site / n8n) present X-Ops-Token and skip
-  // the bot check; public form posts must pass Turnstile.
+  // Auth, in order of preference for trusted server-to-server callers
+  // (the marketing site / n8n): a valid HMAC signature, or a shared token.
+  // Public browser posts fall back to the Turnstile bot check.
   const opsToken = process.env.OPS_INTAKE_TOKEN;
-  const presented = request.headers.get("x-ops-token");
-  const trusted = Boolean(opsToken && presented && presented === opsToken);
-  if (!trusted) {
+  const presentedToken = request.headers.get("x-ops-token");
+  const tokenTrusted = Boolean(opsToken && presentedToken && presentedToken === opsToken);
+
+  const signature = request.headers.get("x-ops-signature");
+  const sigTrusted = signature
+    ? verifyOpsSignature(raw, signature, process.env.OPS_HMAC_SECRET ?? "").ok
+    : false;
+
+  if (!tokenTrusted && !sigTrusted) {
     const ok = await verifyTurnstile(intake.turnstileToken);
     if (!ok) {
       return NextResponse.json({ error: "Turnstile verification failed" }, { status: 403 });

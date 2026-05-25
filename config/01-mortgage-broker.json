@@ -1,0 +1,30 @@
+{
+  "vertical": "mortgage-broker",
+  "label": "Mortgage / Insurance Broker",
+  "intents": [
+    { "value": "pre-approval", "label": "Pre-approval", "priority": "P1" },
+    { "value": "rate-inquiry", "label": "Rate inquiry", "priority": "P2" },
+    { "value": "refinance", "label": "Refinance", "priority": "P2" },
+    { "value": "renewal", "label": "Renewal", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "new", "label": "New" },
+    { "id": "qualifying", "label": "Qualifying" },
+    { "id": "application", "label": "Application" },
+    { "id": "approved", "label": "Approved" },
+    { "id": "funded", "label": "Funded" },
+    { "id": "won", "label": "Won", "terminal": true },
+    { "id": "lost", "label": "Lost", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "noSinOrBankingByEmail": true, "secureIntakeLink": true, "truthfulClaimsOnly": true },
+    "regulators": ["FSRA brokering licence", "Mortgage Agent designation (Level 1/2)"],
+    "notes": "Add 'rates subject to change / O.A.C.' to rate-bearing emails. Never collect SIN or banking by email — link to a secure portal."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 2 },
+  "invoice": {
+    "reminderDays": [120, 90, 30],
+    "repurposedAs": "renewal / maturity reminders (days BEFORE maturity, not overdue)"
+  }
+}

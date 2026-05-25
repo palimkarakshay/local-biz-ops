@@ -1,0 +1,28 @@
+{
+  "vertical": "commercial-cleaning-facility",
+  "label": "Commercial Cleaning / Janitorial",
+  "intents": [
+    { "value": "walkthrough", "label": "Request a walkthrough", "priority": "P1" },
+    { "value": "quote", "label": "Ballpark quote", "priority": "P2" },
+    { "value": "facility-type", "label": "Specialised (medical / industrial)", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "inquiry", "label": "Inquiry" },
+    { "id": "walkthrough", "label": "Walkthrough" },
+    { "id": "proposal", "label": "Proposal" },
+    { "id": "won", "label": "Won" },
+    { "id": "servicing", "label": "Servicing", "terminal": true },
+    { "id": "lost", "label": "Lost", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "truthfulClaimsOnly": true },
+    "regulators": ["WSIB clearance", "Liability insurance", "Bonded", "WHMIS competence"],
+    "notes": "State insured / WSIB / bonded only where true — never invent."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 30 },
+  "invoice": {
+    "reminderDays": [3, 7, 14],
+    "repurposedAs": "recurring monthly invoicing + quarterly QA check-in"
+  }
+}

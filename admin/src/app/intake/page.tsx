@@ -1,4 +1,5 @@
 import { LeadForm } from "@/components/forms/lead-form";
+import { opsConfig } from "@/lib/ops-config";
 
 export const metadata = { title: "Intake demo — local-biz-ops" };
 
@@ -11,7 +12,7 @@ export default function IntakePage() {
         <code>/api/leads</code>. Submitting it lands the lead in the CRM and fires the templated
         follow-up.
       </p>
-      <LeadForm />
+      <LeadForm intents={opsConfig.intents} />
     </>
   );
 }

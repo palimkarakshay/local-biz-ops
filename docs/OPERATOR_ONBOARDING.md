@@ -48,10 +48,14 @@ grep -rn "TODO" admin/src/lib
 - `admin/src/lib/site-config.ts` — business name, title, email, phone, the
   marketing-site URL, the **review URL** (Google Business Profile), and the
   CASL/PIPEDA lines. Keep these in sync with the site's `site-config.ts`.
-- `admin/src/lib/ops-config.ts` — the **vertical lifecycle**: `intents`,
-  `stages`, and the `followUp` / `reviewRequest` / `invoice` templates. The kit
-  ships wired for `home-services-trades`; to switch verticals, run the matching
-  `prompts/NN-*.txt` against the kit (it rewrites `ops-config.ts`).
+- `config/<vertical>.json` — the **vertical lifecycle** as data: `intents`,
+  `stages`, `compliance.flags`, cadences, and the `followUp` / `reviewRequest`
+  / `invoice` templates (inheriting `config/_defaults.json`). All 17 verticals
+  ship here; `04-home-services-trades.json` is fully implemented. Choose the
+  active one with `NEXT_PUBLIC_OPS_VERTICAL` in `.env.local` (default
+  `home-services-trades`) — switching verticals is a config change, not a code
+  edit. `admin/src/lib/ops-config.ts` is just the loader/validator. To tailor a
+  vertical's copy further, run the matching `prompts/NN-*.txt`.
 
 ## 3. Resend transactional email
 
@@ -140,6 +144,36 @@ This is what the review-request step sends.
 
 That's the v0.1 acceptance: a lead lands in the CRM and fires a follow-up + a
 review-request step.
+
+### Verify the n8n webhook shape locally (no n8n needed)
+
+Workflow (a) signs the lead and posts it to the admin. You can exercise that
+exact signed-webhook path with the bundled stand-in:
+
+```bash
+# start the admin with a secret, in another shell:
+OPS_HMAC_SECRET=dev-secret npm run dev
+# then:
+OPS_HMAC_SECRET=dev-secret OPS_INTAKE_URL=http://localhost:3000 \
+  node ../workflows/verify-dispatch.mjs
+```
+
+Expect: a valid signature → `200` + a new CRM row with the follow-up fired; a
+tampered body → `403`. (In production, n8n's Verify HMAC node runs this same
+check, then dispatches to the admin.)
+
+### Confirm Turnstile rejects a bot
+
+Build and start in production mode with **no** `TURNSTILE_SECRET_KEY` and **no**
+`OPS_INTAKE_TOKEN`/`OPS_HMAC_SECRET`, then post a lead with no valid token:
+
+```bash
+npm run build && npm run start &
+curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:3000/api/leads \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"bot","email":"bot@x.com","message":"spam","consent":true}'
+# → 403 (bot check failed). In dev mode the same post is accepted for testing.
+```
 
 ## 10. Hand off to the owner
 

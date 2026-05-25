@@ -16,7 +16,8 @@ no fabricated claims** — applied to operations instead of the website.
 | Folder | What |
 |---|---|
 | `admin/` | A small Next.js console: the CRM, the public `/api/leads` intake, and the follow-up / review / job-complete / invoice-reminder endpoints. Reuses the reference kit's **Resend + Turnstile** wiring and the **`site-config.ts`** config-driven approach. |
-| `workflows/` | The n8n import bundle — three workflows modelled on the reference site's `docs/N8N_SETUP.md` **webhook + AI-structuring** shape: (a) web lead → CRM → follow-up, (b) job-complete → Google Business Profile review request, (c) invoice reminder. |
+| `workflows/` | The n8n import bundle — three workflows modelled on the reference site's `docs/N8N_SETUP.md` **webhook + AI-structuring** shape: (a) web lead → CRM → follow-up, (b) job-complete → Google Business Profile review request, (c) invoice reminder. Plus `verify-dispatch.mjs`, a local stand-in for an n8n run. |
+| `config/` | Per-vertical config as data — intents, CRM stages, messaging, cadences, review platform, and **compliance flags**. One file per vertical (`NN-*.json`) + shared `_defaults.json`. The engine loads one of these; **compliance is config, not a code fork.** |
 | `prompts/` | One ops build-prompt per vertical (01–17), mirroring the reference kit's 17 site prompts, plus the shared foundation + an index. |
 | `docs/` | `OPERATOR_ONBOARDING.md` (developer runbook) and `OWNER_HANDBOOK.md`, in the same voice as the reference kit's docs. |
 
@@ -45,7 +46,15 @@ npm run dev            # http://localhost:3000
 
 ```bash
 npm run build          # production build (passes clean)
-npm test               # Vitest unit tests for the CRM/pipeline logic
+npm test               # Vitest unit tests for the CRM/pipeline + HMAC logic
+```
+
+Verify the signed-webhook path the n8n workflow uses, without an n8n instance —
+start the admin with an `OPS_HMAC_SECRET`, then:
+
+```bash
+OPS_HMAC_SECRET=dev-secret OPS_INTAKE_URL=http://localhost:3000 \
+  node ../workflows/verify-dispatch.mjs   # valid → CRM row + follow-up; tampered → 403
 ```
 
 Then import `workflows/*.json` into n8n (see `workflows/README.md`) and follow
@@ -62,14 +71,18 @@ reference kit is read-only — this kit never modifies it.**
 
 ## Configure a vertical
 
-Everything rebrandable is data in two files (change the config, not the
-components):
+The engine is config-driven, not forked per vertical:
 
-- `admin/src/lib/site-config.ts` — identity, contact, review URL, compliance.
-- `admin/src/lib/ops-config.ts` — the vertical lifecycle: `intents`, `stages`,
-  and the `followUp` / `reviewRequest` / `invoice` templates.
+- `config/<vertical>.json` — the lifecycle as data: `intents`, `stages`,
+  `compliance.flags`, cadences, and message templates (inheriting
+  `config/_defaults.json`). All 17 verticals ship here.
+- `admin/src/lib/ops-config.ts` — the loader: merges the active vertical over
+  defaults and validates it. Select the active one with
+  `NEXT_PUBLIC_OPS_VERTICAL` (default `home-services-trades`).
+- `admin/src/lib/site-config.ts` — business identity, contact, the review URL,
+  and CASL/PIPEDA lines (a subset of the marketing site's `site-config.ts`).
 
-To switch verticals, run the matching `prompts/NN-*.txt` against the kit.
+To tailor a vertical's copy further, run the matching `prompts/NN-*.txt`.
 
 ## Non-negotiables
 

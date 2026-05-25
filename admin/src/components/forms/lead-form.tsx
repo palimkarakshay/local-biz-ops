@@ -3,11 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Turnstile } from "@/components/forms/turnstile";
-import { opsConfig } from "@/lib/ops-config";
 
 type Result = { ok: boolean; id: string; stage: string; followUp: string; reviewRequest: string };
+type Intent = { value: string; label: string };
 
-export function LeadForm() {
+export function LeadForm({ intents }: { intents: Intent[] }) {
   const [token, setToken] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +88,7 @@ export function LeadForm() {
       <label>
         <span>What can we help with?</span>
         <select name="intent" defaultValue="general">
-          {opsConfig.intents.map((i) => (
+          {intents.map((i) => (
             <option key={i.value} value={i.value}>
               {i.label}
             </option>

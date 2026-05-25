@@ -1,0 +1,29 @@
+{
+  "vertical": "event-venue-photographer",
+  "label": "Event Venue / Photographer",
+  "intents": [
+    { "value": "date-inquiry", "label": "Check a date", "priority": "P1" },
+    { "value": "tour", "label": "Book a tour / consult", "priority": "P2" },
+    { "value": "package", "label": "Package / pricing", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "inquiry", "label": "Inquiry" },
+    { "id": "consult", "label": "Consult / tour" },
+    { "id": "proposal", "label": "Proposal" },
+    { "id": "booked", "label": "Booked" },
+    { "id": "event-complete", "label": "Event complete" },
+    { "id": "won", "label": "Won", "terminal": true },
+    { "id": "lost", "label": "Lost", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "truthfulClaimsOnly": true },
+    "regulators": ["Liquor licence / capacity certificate (if applicable)"],
+    "notes": "Clear deposit / cancellation terms referenced (the signed contract governs)."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 3 },
+  "invoice": {
+    "reminderDays": [3, 7, 14],
+    "repurposedAs": "milestone invoicing — deposit, installment(s), final balance before the event"
+  }
+}

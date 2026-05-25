@@ -1,0 +1,28 @@
+{
+  "vertical": "staffing-recruiting-agency",
+  "label": "Staffing / Recruiting Agency",
+  "intents": [
+    { "value": "employer-request", "label": "Employer: request talent", "priority": "P1" },
+    { "value": "candidate-resume", "label": "Candidate: submit resume", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "request", "label": "Request" },
+    { "id": "intake", "label": "Intake" },
+    { "id": "shortlist", "label": "Shortlist" },
+    { "id": "interview", "label": "Interview" },
+    { "id": "placement", "label": "Placement" },
+    { "id": "won", "label": "Won", "terminal": true },
+    { "id": "lost", "label": "Lost", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "humanRightsCode": true, "secureIntakeLink": true, "reviewNeedsApproval": true },
+    "regulators": ["Ontario temp-help / recruiter licensing"],
+    "notes": "Two audiences — never mix employer and candidate inboxes or templates. Zero Human Rights Code prohibited fields in any message. Candidate data privacy (PIPEDA); candidate testimonials only with explicit consent."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 30 },
+  "invoice": {
+    "reminderDays": [7, 14, 30],
+    "repurposedAs": "placement-fee invoicing (tied to the guarantee period)"
+  }
+}
