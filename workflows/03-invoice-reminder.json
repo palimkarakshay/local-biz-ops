@@ -1,0 +1,62 @@
+{
+  "name": "Local Biz Ops · Invoice reminder",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "days", "triggerAtHour": 9 }] }
+      },
+      "name": "Every morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env['OPS_INTAKE_URL'] }}/api/invoices/overdue",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "X-Ops-Token", "value": "={{ $env['OPS_INTAKE_TOKEN'] }}" }]
+        },
+        "options": {}
+      },
+      "name": "Get overdue invoices",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const due = $input.first().json.due || [];\nreturn due.map((d) => ({ json: d }));"
+      },
+      "name": "Fan out due invoices",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['OPS_INTAKE_URL'] }}/api/leads/{{ $json.id }}/invoice-reminder",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "X-Ops-Token", "value": "={{ $env['OPS_INTAKE_TOKEN'] }}" }]
+        },
+        "options": {}
+      },
+      "name": "Send reminder + record checkpoint",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 300],
+      "notes": "The admin sends the templated reminder (escalating by days overdue) and records the day-N checkpoint so it won't fire twice."
+    }
+  ],
+  "connections": {
+    "Every morning": { "main": [[{ "node": "Get overdue invoices", "type": "main", "index": 0 }]] },
+    "Get overdue invoices": { "main": [[{ "node": "Fan out due invoices", "type": "main", "index": 0 }]] },
+    "Fan out due invoices": { "main": [[{ "node": "Send reminder + record checkpoint", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "tags": ["local-biz-ops", "invoicing"]
+}

@@ -1,0 +1,86 @@
+================================================================
+PROMPT 06 — PROFESSIONAL SERVICES (LAW / ACCOUNTING / CONSULTING) (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/06-professional-services.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: consultation intake
+-> CRM -> follow-up -> matter-complete review -> billing reminders.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/credentials. Every outbound
+email is CASL-compliant (consent + unsubscribe). `npm run build` + Vitest stay
+green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — PROFESSIONAL SERVICES (vertical selectable)
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site presents practice areas / services and captures consultation requests
+and gated-guide downloads. These leads need a careful, confidential intake — the
+follow-up itself must not create a professional relationship or invite
+privileged details by open email. The ops job is to book the consult, run a
+compliant intake, then bill cleanly and (where the regulator permits) earn a
+review.
+
+LEAD INTENTS (intents[])
+- "consultation" (P1) — wants to book time.
+- "intake" (P2) — ready to engage; route to secure intake.
+- "quote" (P2) — fee/scope question.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+inquiry -> consult-booked -> engaged -> matter-active -> matter-complete -> won / lost.
+
+FOLLOW-UP (followUp)
+Fire immediately. Confirm the consult slot and STATE PLAINLY that no
+lawyer-client / advisor relationship is formed by the email and that they should
+NOT send confidential or privileged details by email — link to a secure intake
+instead. Keep "results may vary" where outcomes are implied. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to MATTER-COMPLETE. IMPORTANT: LSO (law) and CPA
+Ontario advertising rules constrain testimonials and outcome claims — ask only
+for a factual Google review of the service experience, never a case-outcome
+endorsement. Platform: GOOGLE_REVIEW_URL. If unsure, leave the review step OFF
+and flag it for the professional to approve.
+
+INVOICING / REMINDERS (invoice)
+Retainer request up front + interim/final billing. reminderDays on outstanding
+invoices, worded professionally. Keep trust-account handling out of automation.
+
+COMPLIANCE FOR OUTBOUND
+LSO (law) or CPA Ontario number in the signature (TODO until provided). "No
+relationship via this form/email" + "results may vary" disclaimers. Privilege /
+confidentiality respected — secure channel for anything sensitive. CASL.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- Gate the review step behind a manual approval (a label or admin click) given
+  the advertising rules.
+- Route "intake" leads to a secure-intake link rather than the standard
+  follow-up in workflow (a).
+================================================================
+END PROMPT 06
+================================================================

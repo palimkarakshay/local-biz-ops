@@ -1,0 +1,84 @@
+================================================================
+PROMPT 16 — STAFFING / RECRUITING AGENCY (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/16-staffing-recruiting-agency.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: employer
+request-talent + candidate resume intake (TWO audiences) -> CRM -> follow-up ->
+placement review -> placement-fee invoicing.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/credentials. Every outbound
+email is CASL-compliant (consent + unsubscribe). `npm run build` + Vitest stay
+green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — STAFFING / RECRUITING AGENCY (two audiences)
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site serves TWO audiences: employers (request talent — the primary revenue
+lead) and candidates (submit a resume). They must NOT be mixed: different
+inboxes, different follow-ups, different data handling. The ops job is to respond
+to employers fast with a talent plan, keep candidates warm, make the placement,
+then invoice the fee and earn the employer review.
+
+LEAD INTENTS (intents[])
+- "employer-request" (P1) — employer needs talent; PRIMARY lead, route to the
+  employer inbox.
+- "candidate-resume" (P2) — candidate submission; route to the candidate inbox.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+request -> intake -> shortlist -> interview -> placement -> won / lost.
+(Track candidates as a separate pool/pipeline, not mixed with employer deals.)
+
+FOLLOW-UP (followUp)
+Fire immediately, AUDIENCE-AWARE: employers get a "we're on it + here's the
+next step" with a discovery slot; candidates get a respectful acknowledgement +
+realistic expectations. Keep the two templates separate. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to a successful PLACEMENT (past the guarantee
+period). Ask the EMPLOYER for a Google / Clutch review; handle candidate
+testimonials carefully and only with explicit consent. Platform:
+GOOGLE_REVIEW_URL (+ optional Clutch). No incentives.
+
+INVOICING / REMINDERS (invoice)
+Placement-fee invoicing on a successful hire (often tied to a guarantee period),
+with reminders on outstanding fees. reminderDays on the placement invoice.
+
+COMPLIANCE FOR OUTBOUND
+Ontario temp-help / recruiter LICENSING referenced (TODO until provided). Human
+Rights Code: zero prohibited fields/questions in any templated message to either
+audience. Candidate data privacy (PIPEDA). CASL consent + unsubscribe.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- Switch in workflow (a) routing "employer-request" vs "candidate-resume" to
+  separate inboxes + separate follow-up templates.
+- A guarantee-period check-in to the employer before requesting the review.
+================================================================
+END PROMPT 16
+================================================================

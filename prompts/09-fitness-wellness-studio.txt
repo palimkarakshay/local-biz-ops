@@ -1,0 +1,81 @@
+================================================================
+PROMPT 09 — FITNESS / WELLNESS STUDIO (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/09-fitness-wellness-studio.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: free-trial intake ->
+CRM -> follow-up -> post-trial review -> membership dues + dunning.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/credentials. Every outbound
+email is CASL-compliant (consent + unsubscribe). `npm run build` + Vitest stay
+green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — FITNESS / WELLNESS STUDIO (vertical selectable)
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site shows classes / programs / membership tiers and captures free-trial
+requests. The whole funnel is trial -> first visit -> member -> retained. The
+ops job is to get the trial booked while motivation is high, convert it to a
+membership, then keep dues paid and members from quietly churning.
+
+LEAD INTENTS (intents[])
+- "free-trial" (P1) — book the trial fast.
+- "membership" (P2) — pricing / sign-up.
+- "class-info" (P2) — schedule / class question.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+inquiry -> trial-booked -> trial-attended -> member -> at-risk -> churned.
+
+FOLLOW-UP (followUp)
+Fire immediately. Confirm the trial slot, link the PAR-Q / waiver to complete
+beforehand, and say what to bring. A no-show nudge if the trial passes
+un-attended. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to a few sessions in (not after one trial) — ask
+when they're seeing results. Platform: GOOGLE_REVIEW_URL. No incentives.
+
+INVOICING / REMINDERS (invoice)
+Recurring membership dues: reminder before each cycle + a DUNNING sequence on a
+failed payment (retry tone, then a "let's fix your card" nudge). reminderDays
+map to the billing cycle.
+
+COMPLIANCE FOR OUTBOUND
+Ontario Consumer Protection rules on membership terms / cancellation referenced.
+PAR-Q / waiver before activity. No medical or outcome guarantees. CASL consent +
+unsubscribe.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- Repurpose workflow (c) as recurring dues + failed-payment dunning rather than
+  one-off invoices.
+- An at-risk win-back touch when a member hasn't attended in N days (reuse the
+  schedule trigger against attendance data).
+================================================================
+END PROMPT 09
+================================================================

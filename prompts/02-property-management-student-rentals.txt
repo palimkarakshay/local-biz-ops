@@ -1,0 +1,84 @@
+================================================================
+PROMPT 02 — PROPERTY MANAGEMENT / STUDENT RENTALS (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/02-property-management-student-rentals.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: viewing/application
+intake -> CRM -> follow-up -> move-in review -> rent reminders.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/credentials. Every outbound
+email is CASL-compliant (consent + unsubscribe). Never email restricted data.
+`npm run build` + Vitest stay green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — PROPERTY MANAGEMENT / STUDENT RENTALS
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site lists units near UW / Laurier / Conestoga and captures viewing and
+application requests. Student-rental demand is seasonal and bursty — many leads
+per unit in a short window. The ops job is to confirm viewings fast, move
+qualified applicants to a signed lease, then keep the tenant relationship warm
+and rent paid on time.
+
+LEAD INTENTS (intents[])
+- "viewing" (P1) — wants to see a unit; book fast or lose them.
+- "application" (P2) — ready to apply.
+- "maintenance" (P2) — existing tenant; route to a maintenance inbox.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+inquiry -> viewing-booked -> application -> lease-signed -> tenant -> moved-out.
+(lease-signed / move-in is the job-complete equivalent for the review step.)
+
+FOLLOW-UP (followUp)
+Fire immediately. For "viewing", confirm the slot + address + what to bring and
+link to the booking page. For "application", link to the online application.
+CRITICAL: the application and any follow-up MUST omit Ontario Human Rights Code
+prohibited questions (no asking about family status, citizenship, etc.).
+Reference the Ontario Standard Lease + RTA. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to MOVE-IN (a week or two after, once settled),
+and again at a smooth lease renewal. Platform: GOOGLE_REVIEW_URL.
+
+INVOICING / REMINDERS (invoice)
+Repurpose as RENT reminders: a few days BEFORE the 1st (friendly), and an
+escalating LATE-RENT notice after, worded to respect the RTA (no threats; lawful
+N4 timelines handled separately). reminderDays apply to the rent due date.
+
+COMPLIANCE FOR OUTBOUND
+RTA + Standard Lease references. Human Rights Code: zero prohibited questions in
+any templated message. PIPEDA on applicant data. CASL consent + unsubscribe.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- Repoint workflow (c) at a recurring monthly rent schedule rather than one-off
+  invoices; key reminders off each lease's rent-due day.
+- Add a maintenance-intake branch in workflow (a) that routes "maintenance"
+  leads to a separate tracker/inbox instead of the sales follow-up.
+================================================================
+END PROMPT 02
+================================================================

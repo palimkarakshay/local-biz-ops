@@ -1,0 +1,84 @@
+================================================================
+PROMPT 13 — MANAGED IT SERVICES (MSP) (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/13-managed-it-services.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: assessment /
+discovery intake (sales vs support) -> CRM -> follow-up -> onboarding review ->
+monthly + renewal billing.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/certifications. Every outbound
+email is CASL-compliant (consent + unsubscribe). `npm run build` + Vitest stay
+green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — MANAGED IT SERVICES (MSP, sells to local SMBs)
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site presents IT services + managed-plan tiers and captures free-assessment
+and discovery-call leads, with a sales-vs-support split. The ops job is to route
+support away from sales fast, run discovery to a signed managed-services
+agreement, onboard cleanly, then keep monthly billing and renewals on track —
+recurring revenue is the whole game.
+
+LEAD INTENTS (intents[])
+- "support" (P1) — existing client needs help; route to the support/ticket
+  inbox, NOT the sales follow-up.
+- "assessment" (P1) — wants the free IT assessment.
+- "discovery" (P2) — sales discovery call.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+inquiry -> discovery -> proposal -> onboarding -> client -> churned.
+
+FOLLOW-UP (followUp)
+Fire immediately. For sales intents, confirm + book the assessment/discovery and
+set a security-conscious tone. For "support", acknowledge + route to the ticket
+system with an SLA expectation — do not run the sales sequence. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to ONBOARDING complete (and again after a strong
+QBR). B2B reviews live on Google + Clutch; ask the champion. Platform:
+GOOGLE_REVIEW_URL (+ optional Clutch link). No incentives; truthful claims only.
+
+INVOICING / REMINDERS (invoice)
+Monthly managed-plan billing reminders + a RENEWAL reminder ahead of the
+agreement anniversary. reminderDays on monthly invoices; add a 60/30-day renewal
+nudge.
+
+COMPLIANCE FOR OUTBOUND
+PIPEDA on client data. Truthful certification/partner claims only (no invented
+badges). SLA terms accurate. CASL consent + unsubscribe.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- Switch in workflow (a) routing "support" to the ticketing inbox vs sales
+  intents to the discovery sequence.
+- A renewal-anniversary nudge in workflow (c) (N days before) alongside monthly
+  billing reminders.
+================================================================
+END PROMPT 13
+================================================================

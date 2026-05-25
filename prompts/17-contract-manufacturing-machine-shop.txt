@@ -1,0 +1,89 @@
+================================================================
+PROMPT 17 — CONTRACT MANUFACTURING / MACHINE SHOP (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/17-contract-manufacturing-machine-shop.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: RFQ intake (NDA +
+drawing) -> CRM -> follow-up -> post-delivery reference request -> PO / net-terms
+invoicing.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/references/certifications. Every outbound
+email is CASL-compliant (consent + unsubscribe). `npm run build` + Vitest stay
+green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — CONTRACT MANUFACTURER / MACHINE SHOP (B2B, for OEMs)
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site presents capabilities (tolerance / material / lead-time facts) and
+captures RFQs that involve an NDA and a drawing/part file. Buyers are OEM
+engineers/purchasers; the relationship is long, technical, and IP-sensitive. The
+ops job is to acknowledge the RFQ and handle the NDA + drawing securely, quote,
+win the PO, deliver to spec, then earn a reference (B2B reviews are usually
+references/case studies, not Google stars).
+
+LEAD INTENTS (intents[])
+- "rfq" (P1) — request for quote with a part/drawing.
+- "nda" (P1) — needs an NDA before sharing files.
+- "capability" (P2) — can-you-make-this question.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+rfq -> nda -> quote -> po -> production -> shipped -> won / lost.
+
+FOLLOW-UP (followUp)
+Fire immediately. Acknowledge the RFQ and give SECURE drawing-submission
+instructions — never invite proprietary files or specs into an open email
+thread; link to a secure upload and offer the NDA first. Confirm material /
+tolerance / quantity / target lead-time. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to SHIPPED + accepted. Ask for a REFERENCE /
+case-study permission or a Google/industry review as appropriate — many OEM
+buyers can't post public reviews, so default to a private reference request and
+make the public review optional. Platform: GOOGLE_REVIEW_URL (optional). Never
+fabricate a testimonial.
+
+INVOICING / REMINDERS (invoice)
+PO-based invoicing on NET terms (net-30 / net-60). reminderDays measured from the
+invoice/PO terms; keep the tone B2B-professional. Repurpose for a reorder /
+blanket-PO nudge on recurring parts.
+
+COMPLIANCE FOR OUTBOUND
+Truthful certification claims only — ISO 9001 / IATF 16949 / AS9100 as TODO
+tokens until verified; never invent. OHSA / WSIB. Controlled-goods / export
+(ITAR-equivalent) handling noted only if applicable. NDA + IP confidentiality
+respected. CASL consent + unsubscribe.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- Gate the public review step behind manual approval; default the "review" to a
+  private reference request.
+- An RFQ-aging nudge (follow up on open quotes after N days) reusing the
+  schedule trigger.
+================================================================
+END PROMPT 17
+================================================================

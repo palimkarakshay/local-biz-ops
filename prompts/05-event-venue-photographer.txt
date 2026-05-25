@@ -1,0 +1,84 @@
+================================================================
+PROMPT 05 — EVENT VENUE / PHOTOGRAPHER (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/05-event-venue-photographer.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: date-inquiry intake
+-> CRM -> follow-up -> post-event review -> milestone invoicing.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/credentials. Every outbound
+email is CASL-compliant (consent + unsubscribe). `npm run build` + Vitest stay
+green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — EVENT VENUE / PHOTOGRAPHER
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site captures date inquiries (date / guest count / budget) and shows
+portfolio galleries + packages. Bookings are high-value, far in advance, and
+date-exclusive — two couples can't have the same Saturday. The ops job is to
+respond before the date gets booked elsewhere, convert the tour/consult into a
+signed contract + deposit, then collect installments and earn the post-event
+review that drives the next year's bookings.
+
+LEAD INTENTS (intents[])
+- "date-inquiry" (P1) — checking a specific date; respond same day.
+- "tour" (P2) — wants to see the venue / meet the photographer.
+- "package" (P2) — pricing / package question.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+inquiry -> consult/tour -> proposal -> booked -> event-complete -> won / lost.
+(event-complete is the job-complete equivalent for the review step.)
+
+FOLLOW-UP (followUp)
+Fire immediately and lead with availability for the requested date (scarcity is
+real and honest here). Attach/link the relevant package + portfolio. Offer the
+tour/consult booking link. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to EVENT-COMPLETE. Ask a few days after, with the
+gallery/delivery — emotion is highest then. Platform: GOOGLE_REVIEW_URL (and
+optionally a wedding directory as a second link). No incentives.
+
+INVOICING / REMINDERS (invoice)
+Milestone invoicing: deposit to hold the date -> installment(s) -> final balance
+before the event. reminderDays apply to each milestone's due date; never let the
+final balance lapse past the event.
+
+COMPLIANCE FOR OUTBOUND
+Clear deposit / cancellation terms referenced (contract governs). Any liquor
+licence / capacity certificate noted where applicable (TODO until provided).
+CASL consent + unsubscribe.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- Add installment milestones as scheduled checkpoints in workflow (c).
+- A pre-event countdown touch (final details / timeline) keyed off the event
+  date, reusing the schedule trigger.
+================================================================
+END PROMPT 05
+================================================================

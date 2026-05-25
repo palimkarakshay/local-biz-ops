@@ -1,0 +1,80 @@
+================================================================
+PROMPT 10 — SALON / SPA / BARBER (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/10-salon-spa-barber.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: booking intake ->
+CRM -> follow-up -> post-visit review -> rebooking + no-show protection.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/credentials. Every outbound
+email is CASL-compliant (consent + unsubscribe). `npm run build` + Vitest stay
+green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — SALON / SPA / BARBER (vertical selectable)
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site shows the service menu (with "from" pricing) + lookbook and captures
+booking requests. The economics are repeat visits and a full chair — no-shows
+and gaps are the enemy. The ops job is to confirm the booking, prevent the
+no-show, earn the review, and bring the client back on cadence.
+
+LEAD INTENTS (intents[])
+- "booking" (P1) — wants an appointment.
+- "consult" (P2) — colour / treatment consult.
+- "gift-card" (P3) — purchase / question.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+inquiry -> booked -> seen -> rebook-due -> won / lost.
+
+FOLLOW-UP (followUp)
+Fire immediately. Confirm the slot + stylist + prep notes, and a reminder a day
+before to cut no-shows. Where the business takes deposits on long services, link
+the deposit. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to SEEN. Ask same-day or next-day while they love
+the result. Platform: GOOGLE_REVIEW_URL. No incentives.
+
+INVOICING / REMINDERS (invoice)
+Most services are pay-at-visit, so repurpose the invoice workflow as a REBOOKING
+reminder (e.g. 4-6 weeks after a cut/colour) and a NO-SHOW / late-cancel deposit
+notice. reminderDays map to the rebooking cadence.
+
+COMPLIANCE FOR OUTBOUND
+Public-health personal-service-setting (PSS) standards are an in-shop matter;
+keep marketing honest (no medical claims for aesthetics). CASL consent +
+unsubscribe; gift-card terms where relevant.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- Repurpose workflow (c) as a rebooking cadence keyed off last-visit date.
+- A 24h appointment reminder keyed off the booked slot (reuse the schedule
+  trigger) to protect against no-shows.
+================================================================
+END PROMPT 10
+================================================================

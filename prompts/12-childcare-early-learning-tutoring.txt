@@ -1,0 +1,81 @@
+================================================================
+PROMPT 12 — CHILDCARE / EARLY LEARNING / TUTORING (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/12-childcare-early-learning-tutoring.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: tour / waitlist /
+enrollment intake -> CRM -> follow-up -> term review -> tuition reminders.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/credentials. Every outbound
+email is CASL-compliant (consent + unsubscribe). `npm run build` + Vitest stay
+green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — CHILDCARE / EARLY LEARNING / TUTORING (vertical selectable)
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site shows programs by age group (with ratios) and captures tour, waitlist,
+and enrollment requests. Parents are choosing who to trust with their child, so
+the intake handles MINIMAL child data and the tone is reassuring. The ops job is
+to book the tour, manage the waitlist transparently, convert to enrollment, then
+keep tuition current.
+
+LEAD INTENTS (intents[])
+- "tour" (P1) — wants to visit.
+- "waitlist" (P1) — wants a spot.
+- "enrollment" (P2) — ready to enroll.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+inquiry -> tour-booked -> waitlist -> enrolled -> active -> withdrawn.
+
+FOLLOW-UP (followUp)
+Fire immediately. Confirm the tour, explain the waitlist position/process
+honestly, and link a secure enrollment form. Collect the MINIMUM child data;
+never put a child's details in an email body — link to a secure form. State
+RECE credentials + that staff hold Vulnerable Sector Checks. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to a settled-in point (a few weeks after
+enrollment) or end of a term. Ask parents for a factual Google review; keep it
+gentle and non-pressuring. Platform: GOOGLE_REVIEW_URL.
+
+INVOICING / REMINDERS (invoice)
+Recurring TUITION reminders before each cycle (CWELCC-aware where applicable),
+plus a gentle overdue nudge. reminderDays map to the tuition cycle.
+
+COMPLIANCE FOR OUTBOUND
+CCEYA + Ministry licensing; CWELCC where applicable; staff RECE credentials +
+Vulnerable Sector Checks referenced (TODO until provided). MINIMAL child data by
+email — secure channel for anything sensitive. CASL consent + unsubscribe.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- Repurpose workflow (c) as a recurring tuition schedule.
+- A waitlist-status update touch (monthly) so families aren't left guessing.
+================================================================
+END PROMPT 12
+================================================================

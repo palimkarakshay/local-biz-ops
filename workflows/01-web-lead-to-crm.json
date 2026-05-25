@@ -1,0 +1,85 @@
+{
+  "name": "Local Biz Ops · Web lead → CRM → follow-up",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ops-web-lead",
+        "responseMode": "responseNode",
+        "options": { "rawBody": true }
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const crypto = require('crypto');\nconst secret = $env['OPS_HMAC_SECRET'];\nconst header = $input.first().headers['x-ops-signature'] || '';\nconst raw = $input.first().rawBody?.toString('utf8') ?? '';\nconst parts = Object.fromEntries(header.split(',').map(p => p.split('=')));\nconst t = Number(parts.t);\nconst supplied = parts.v1;\nif (!Number.isFinite(t) || !supplied) throw new Error('bad-signature-format');\nif (Math.abs(Math.floor(Date.now() / 1000) - t) > 300) throw new Error('signature-stale');\nconst expected = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\nconst a = Buffer.from(expected, 'hex');\nconst b = Buffer.from(supplied, 'hex');\nif (a.length !== b.length || !crypto.timingSafeEqual(a, b)) throw new Error('signature-invalid');\nreturn [{ json: JSON.parse(raw) }];"
+      },
+      "name": "Verify HMAC",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "model": "claude-opus-4-7",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a lead-structurer for a local home-services / trades business. Take the raw web lead and return STRICT JSON with these keys: {\"name\": string, \"email\": string, \"phone\": string, \"intent\": one of \"emergency\"|\"quote\"|\"booking\"|\"general\", \"service\": short service line e.g. \"furnace repair\", \"urgency\": \"low\"|\"medium\"|\"high\", \"summary\": one-sentence summary}. Copy name/email/phone verbatim — never invent contact details. If a field is missing, use an empty string. Pick \"emergency\" only for no-heat / no-power / flooding / gas-smell situations."
+          },
+          {
+            "role": "user",
+            "content": "=Name: {{ $json.name }}\\nEmail: {{ $json.email }}\\nPhone: {{ $json.phone }}\\nStated intent: {{ $json.intent }}\\nMessage:\\n{{ $json.message }}"
+          }
+        ]
+      },
+      "name": "Structure with Claude",
+      "type": "n8n-nodes-base.anthropic",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['OPS_INTAKE_URL'] }}/api/leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Ops-Token", "value": "={{ $env['OPS_INTAKE_TOKEN'] }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ name: $json.name, email: $json.email, phone: $json.phone, intent: $json.intent, message: $('Verify HMAC').item.json.message, source: 'n8n-web', structured: { service: $json.service, urgency: $json.urgency, summary: $json.summary } }) }}",
+        "options": {}
+      },
+      "name": "Create CRM row + fire follow-up",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, leadId: $('Create CRM row + fire follow-up').item.json.id } }}"
+      },
+      "name": "ACK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1100, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Verify HMAC", "type": "main", "index": 0 }]] },
+    "Verify HMAC": { "main": [[{ "node": "Structure with Claude", "type": "main", "index": 0 }]] },
+    "Structure with Claude": { "main": [[{ "node": "Create CRM row + fire follow-up", "type": "main", "index": 0 }]] },
+    "Create CRM row + fire follow-up": { "main": [[{ "node": "ACK", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "tags": ["local-biz-ops", "intake", "crm"]
+}

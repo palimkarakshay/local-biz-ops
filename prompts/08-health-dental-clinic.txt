@@ -1,0 +1,83 @@
+================================================================
+PROMPT 08 — HEALTH / DENTAL CLINIC (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/08-health-dental-clinic.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: new-patient / booking
+intake -> CRM -> follow-up -> post-visit review -> balance + recall reminders.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/credentials. Every outbound
+email is CASL-compliant (consent + unsubscribe). `npm run build` + Vitest stay
+green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — HEALTH / DENTAL CLINIC (vertical selectable)
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site lists services + clinicians (with College registration) and captures
+new-patient and booking requests. These leads carry health information, so the
+intake and every follow-up are PHIPA-sensitive — keep personal health info OUT
+of email and link to a secure form/portal. The ops job is to book the visit,
+keep the chair full with recalls, and (within College rules) earn reviews.
+
+LEAD INTENTS (intents[])
+- "new-patient" (P1) — accepting-new-patients inquiry; respond fast.
+- "booking" (P1) — appointment request.
+- "treatment" (P2) — specific treatment question.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+inquiry -> booked -> seen -> recall-due -> won / lost.
+
+FOLLOW-UP (followUp)
+Fire immediately. Confirm the appointment basics and link to a SECURE intake for
+medical history — NEVER collect or echo health details in email. State the
+accepting-new-patients status. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to SEEN (post-visit). College advertising rules
+(RCDSO / CPSO / Physio / CCO) restrict testimonials and outcome claims — ask
+only for a factual Google review of the experience, never a clinical-outcome
+endorsement. Platform: GOOGLE_REVIEW_URL. Gate behind clinician approval if
+unsure.
+
+INVOICING / REMINDERS (invoice)
+Patient balance after insurance (reminderDays on the balance). Repurpose for
+RECALL reminders — 6-month hygiene / follow-up — keyed off the last visit date.
+
+COMPLIANCE FOR OUTBOUND
+PHIPA: minimal PHI, secure channel, explicit consent for email communication.
+Clinician College registration in the signature (TODO until provided). College
+advertising rules on any review/testimonial ask. CASL.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- Repurpose workflow (c) as a recall scheduler (6-month / annual) off last-visit
+  dates instead of overdue invoices.
+- An appointment-reminder touch (24-48h before) keyed off the booked slot.
+================================================================
+END PROMPT 08
+================================================================

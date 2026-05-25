@@ -1,0 +1,20 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next
+/out
+next-env.d.ts
+
+# env
+.env
+.env.local
+.env*.local
+
+# CRM data store (file-backed v0.1 store — never commit real leads)
+/data
+*.jsonl
+
+# misc
+.DS_Store
+*.tsbuildinfo

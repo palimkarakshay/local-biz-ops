@@ -1,0 +1,203 @@
+:root {
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a4a;
+  --muted: #8a8a8a;
+  --canvas: #faf9f7;
+  --elevated: #ffffff;
+  --border: #e5e2dd;
+  --accent: #b5562f;
+  --accent-deep: #8f3f1f;
+  --moss: #3f6b4f;
+  --ok: #2f7d4f;
+  --warn: #b58a2f;
+  --error: #b53030;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
+  line-height: 1.5;
+}
+
+a {
+  color: var(--accent-deep);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.5rem;
+  background: var(--elevated);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar .brand {
+  font-weight: 650;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.topbar nav a {
+  margin-left: 1.25rem;
+  text-decoration: none;
+}
+
+.container {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+h1 {
+  font-size: 1.7rem;
+  margin: 0 0 0.5rem;
+}
+
+.lede {
+  color: var(--ink-soft);
+  max-width: 60ch;
+}
+
+.card {
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.4rem;
+  margin: 1rem 0;
+}
+
+.grid-2 {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.6rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  border: 1px solid var(--border);
+  background: var(--canvas);
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.badge.ok {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+.badge.pending {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+.badge.p1 {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+label {
+  display: block;
+  margin: 0.75rem 0;
+}
+label > span {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+  background: var(--elevated);
+  color: var(--ink);
+}
+
+button,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #fff;
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+button.secondary,
+.btn.secondary {
+  background: transparent;
+  color: var(--ink);
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.row-actions form {
+  margin: 0;
+}
+.row-actions button {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+.small {
+  font-size: 0.82rem;
+}
+.success-box {
+  border: 1px solid var(--ok);
+  background: #f1f8f3;
+  border-radius: 10px;
+  padding: 1.25rem;
+}

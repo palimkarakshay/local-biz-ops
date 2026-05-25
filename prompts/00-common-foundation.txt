@@ -1,0 +1,104 @@
+================================================================
+OPS COMMON FOUNDATION — read this before any business-specific section
+================================================================
+
+This text is the shared base for every ops prompt in this kit. The numbered
+prompts (01-17) inline this whole block so each one stands alone. If you are
+reading this file on its own, it is the reference copy.
+
+It mirrors the marketing-site kit's `prompts/00-common-foundation.txt`, but for
+the OPERATIONS that run AFTER the website: lead intake -> CRM -> follow-up ->
+review request -> invoicing.
+
+----------------------------------------------------------------
+THE TWO REPOSITORIES IN THIS SESSION
+----------------------------------------------------------------
+1. `local-biz-ops` — THIS kit. Use `admin/` as the ops console (the CRM +
+   action endpoints) and `workflows/` as the n8n bundle. You configure the
+   vertical here, mainly by editing config.
+
+2. The marketing site built from the matching `marketing-site-creator`
+   (reference kit) prompt — it POSTs its leads into this kit. DO NOT modify the
+   reference kit; it is read-only reference material.
+
+The ops kit sits NEXT TO the site. The site captures the lead; this kit is what
+happens to the lead afterwards.
+
+----------------------------------------------------------------
+THE STACK (already wired in `admin/` + `workflows/`)
+----------------------------------------------------------------
+- Next.js admin console (App Router) — the CRM, the public `/api/leads` intake,
+  and the follow-up / review / job-complete / invoice-reminder endpoints.
+- Transactional email: Resend. Spam protection: Cloudflare Turnstile on the
+  public intake. This is the SAME wiring as the marketing-site kit — an operator
+  running both fills in the same env values in each.
+- Automation: an n8n workflow bundle on free-tier self-hosted n8n (Railway
+  Hobby), modelled on the reference site's `docs/N8N_SETUP.md` webhook +
+  AI-structuring shape: Webhook -> Verify HMAC -> structure with Claude ->
+  dispatch to the admin API.
+- Tests: Vitest (pipeline logic).
+
+Required environment variables (see `admin/.env.example`):
+- NEXT_PUBLIC_SITE_URL
+- RESEND_API_KEY, RESEND_FROM_EMAIL, RESEND_TO_EMAIL
+- NEXT_PUBLIC_TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY
+- GOOGLE_REVIEW_URL (the review-request destination)
+- OPS_INTAKE_TOKEN (trusted server-to-server intake; OPS_HMAC_SECRET +
+  OPS_INTAKE_URL live on the n8n side)
+
+With NOTHING set, the kit runs in dev simulation: Turnstile is bypassed and
+emails are logged, not sent — so the whole lifecycle is demoable at $0.
+
+----------------------------------------------------------------
+CONFIG-DRIVEN ARCHITECTURE — change the config, not the components
+----------------------------------------------------------------
+Two files own everything rebrandable:
+
+- `admin/src/lib/site-config.ts` — business identity, contact, the review
+  destination, and CASL/PIPEDA compliance lines. Same shape (a subset) as the
+  marketing site's `site-config.ts`, so the values line up.
+- `admin/src/lib/ops-config.ts` — the vertical lifecycle, as data:
+  - `intents[]`   the lead types the site form sends, each with a P1/P2/P3
+                  priority that drives triage.
+  - `stages[]`    the CRM pipeline; a new lead lands in `stages[0]`.
+  - `followUp`    a templated email fired on intake (Resend, or simulated).
+  - `reviewRequest` a `trigger` ("job-complete" | "on-intake"), a delay, and a
+                  template that links to `GOOGLE_REVIEW_URL` (Google Business
+                  Profile by default).
+  - `invoice`     `reminderDays` checkpoints + an escalating reminder template.
+
+Templates are strings with `{{placeholders}}` (firstName, businessName,
+businessPhone, reviewUrl, invoiceNumber, daysOverdue, signature, caslLine,
+unsubscribeUrl, ...). Edit the strings; do not touch the components.
+
+----------------------------------------------------------------
+THE CRM + THE THREE WORKFLOWS (reuse, repurpose)
+----------------------------------------------------------------
+- CRM store: a file-backed JSONL pipeline (`admin/data/leads.jsonl`) — the same
+  lead-log shape the site kit uses, promoted to stages + per-lead steps.
+  Upgrade path (Postgres / Google Sheet) is in `docs/`.
+- Workflow (a) web-lead-to-crm: a web lead lands in the CRM and fires the
+  templated follow-up.
+- Workflow (b) job-complete-review-request: completing a job fires the review
+  request (after a short, polite delay).
+- Workflow (c) invoice-reminder: a daily schedule nudges invoices that cross a
+  reminder checkpoint.
+Repurpose these per vertical (e.g. "invoice reminder" becomes "rent due",
+"membership dues", "recall", or "renewal" where one-off invoicing doesn't fit).
+
+----------------------------------------------------------------
+THE QUALITY BAR (non-negotiable for every build)
+----------------------------------------------------------------
+- NEVER fabricate reviews, credentials, licence numbers, statistics, or
+  testimonials. Use TODO tokens and marked placeholders.
+- Every outbound message is CASL-compliant: it goes only to people who
+  contacted the business, and carries an unsubscribe line. Honour opt-outs.
+- Privacy-first follow-ups: never email the sensitive data a vertical restricts
+  (SIN/banking, health info, child data, candidate-protected fields). Link to a
+  secure channel instead.
+- Mobile-friendly admin; labelled form fields; accessible.
+- `npm run build` MUST pass; keep the Vitest tests green and add a test for any
+  new pipeline logic.
+================================================================
+END OPS COMMON FOUNDATION
+================================================================

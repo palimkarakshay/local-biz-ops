@@ -1,0 +1,72 @@
+{
+  "name": "Local Biz Ops · Job complete → review request",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ops-job-complete",
+        "responseMode": "responseNode",
+        "options": { "rawBody": true }
+      },
+      "name": "Webhook (job complete)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const crypto = require('crypto');\nconst secret = $env['OPS_HMAC_SECRET'];\nconst header = $input.first().headers['x-ops-signature'] || '';\nconst raw = $input.first().rawBody?.toString('utf8') ?? '';\nconst parts = Object.fromEntries(header.split(',').map(p => p.split('=')));\nconst t = Number(parts.t);\nconst supplied = parts.v1;\nif (!Number.isFinite(t) || !supplied) throw new Error('bad-signature-format');\nif (Math.abs(Math.floor(Date.now() / 1000) - t) > 300) throw new Error('signature-stale');\nconst expected = crypto.createHmac('sha256', secret).update(`${t}.${raw}`).digest('hex');\nconst a = Buffer.from(expected, 'hex');\nconst b = Buffer.from(supplied, 'hex');\nif (a.length !== b.length || !crypto.timingSafeEqual(a, b)) throw new Error('signature-invalid');\nreturn [{ json: JSON.parse(raw) }];"
+      },
+      "name": "Verify HMAC",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "unit": "days",
+        "amount": 1
+      },
+      "name": "Wait (review delay)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [620, 300],
+      "notes": "Best practice: ask 1-2 days after the job, not at completion. Mirror opsConfig.reviewRequest.delayDays."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['OPS_INTAKE_URL'] }}/api/leads/{{ $('Verify HMAC').item.json.leadId }}/review-request",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "X-Ops-Token", "value": "={{ $env['OPS_INTAKE_TOKEN'] }}" }]
+        },
+        "options": {}
+      },
+      "name": "Send review request (GBP link)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 300],
+      "notes": "The admin sends the templated review email containing the Google Business Profile review link (GOOGLE_REVIEW_URL). Idempotent: skips if already sent."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, reviewRequest: $json.reviewRequest } }}"
+      },
+      "name": "ACK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1100, 300]
+    }
+  ],
+  "connections": {
+    "Webhook (job complete)": { "main": [[{ "node": "Verify HMAC", "type": "main", "index": 0 }]] },
+    "Verify HMAC": { "main": [[{ "node": "Wait (review delay)", "type": "main", "index": 0 }]] },
+    "Wait (review delay)": { "main": [[{ "node": "Send review request (GBP link)", "type": "main", "index": 0 }]] },
+    "Send review request (GBP link)": { "main": [[{ "node": "ACK", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false,
+  "tags": ["local-biz-ops", "reviews"]
+}

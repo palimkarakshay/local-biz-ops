@@ -1,0 +1,86 @@
+================================================================
+PROMPT 04 — HOME SERVICES / TRADES (OPS)   [v0.1 DEFAULT]
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/04-home-services-trades.txt.
+
+>>> This is the vertical the kit ships wired for in v0.1. `admin/src/lib/
+    ops-config.ts` already matches this prompt — use it as the worked example
+    when adapting any other vertical.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: emergency / quote /
+booking intake -> CRM -> follow-up -> job-complete review -> invoice reminders.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/licence numbers. Every
+outbound email is CASL-compliant (consent + unsubscribe). `npm run build` +
+Vitest stay green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — HOME SERVICES / TRADES
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site (HVAC / plumbing / electrical / landscaping / cleaning / reno — set in
+the site's config) captures high-intent local leads who want to call NOW or get
+a fast quote. Speed-to-lead and visible trust win the job. After the job, a
+fresh Google review is the single biggest driver of the next lead, and getting
+paid on time is the difference between a good month and a bad one.
+
+LEAD INTENTS (intents[])  — ships as the default
+- "emergency" (P1) — no-heat / no-power / flooding / gas-smell; phone-first.
+- "quote" (P2) — wants an estimate.
+- "booking" (P2) — wants a service window.
+- "general" (P3).
+
+CRM PIPELINE (stages[])  — ships as the default
+new -> contacted -> scheduled -> job-complete -> won / lost.
+
+FOLLOW-UP (followUp)  — fires on intake, delayHours: 0
+Confirm receipt, set the expectation of a real reply within the hour, and offer
+the click-to-call number for emergencies. Vertical-aware tone (furnace/AC/drain/
+panel). This is the default template shipped in ops-config.ts.
+
+REVIEW REQUEST (reviewRequest)  — trigger "job-complete", delayDays 1
+Marking the job complete fires the Google Business Profile review request (after
+a 1-day delay in workflow b). "If we did right by you, a quick review helps your
+neighbours" + a "reply first if anything fell short" safety valve. No incentives.
+
+INVOICING / REMINDERS (invoice)  — reminderDays [3, 7, 14]
+Deposit on booking (larger jobs) + balance on completion. Escalating but polite
+reminders at 3 / 7 / 14 days overdue. Ships as the default.
+
+COMPLIANCE FOR OUTBOUND
+Relevant licence in the signature (TSSA / ECRA-ESA / master plumber — TODO until
+provided), plus insurance + WSIB clearance and warranty terms where stated.
+NEVER invent a licence number. CASL consent + unsubscribe.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- Switch in workflow (a) routing "emergency" to immediate SMS (Twilio) on top of
+  the email follow-up — speed-to-lead for after-hours.
+- Seasonal touch: a scheduled "furnace tune-up / AC check / spring cleanup"
+  nudge to past job-complete customers (a second use of workflow c's schedule).
+================================================================
+END PROMPT 04
+================================================================

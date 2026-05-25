@@ -1,0 +1,81 @@
+================================================================
+PROMPT 07 — RESTAURANT / CATERING (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/07-restaurant-catering.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: catering/event
+intake -> CRM -> follow-up -> post-event review -> deposit + balance invoicing.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/credentials. Every outbound
+email is CASL-compliant (consent + unsubscribe). `npm run build` + Vitest stay
+green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — RESTAURANT / CATERING
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site shows the menu (with dietary tags) + hours and captures catering and
+private-event inquiries plus reservation requests. Walk-in dining mostly self-
+serves; the ops value is in catering — higher ticket, planned ahead, repeatable.
+The ops job is to quote catering fast, lock the date with a deposit, deliver,
+and bank the post-event review.
+
+LEAD INTENTS (intents[])
+- "catering" (P1) — event catering quote.
+- "reservation" (P2) — large party / private booking.
+- "event" (P2) — buyout / private event.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+inquiry -> quote -> booked -> event-complete -> won / lost.
+
+FOLLOW-UP (followUp)
+Fire immediately. For "catering", confirm date / headcount / dietary needs and
+send the menu + a quote next-step. ALWAYS include the allergen disclaimer in any
+menu-bearing message. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to EVENT-COMPLETE (catering) or a post-visit ask
+for private bookings. Platform: GOOGLE_REVIEW_URL (and optionally a second
+dining-review link). No incentives.
+
+INVOICING / REMINDERS (invoice)
+Deposit to hold the date + balance due before/at the event. reminderDays on the
+balance; don't let it lapse past the event date.
+
+COMPLIANCE FOR OUTBOUND
+Allergen disclaimer on every menu/quote email. Keep advertised hours in config
+and in sync with Google Business. CASL consent + unsubscribe.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- A "final headcount + dietary confirmation" touch keyed off the event date
+  (reuse the schedule trigger).
+- Switch in workflow (a) routing "reservation" to the host/booking inbox vs
+  "catering" to the events inbox.
+================================================================
+END PROMPT 07
+================================================================

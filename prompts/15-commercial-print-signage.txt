@@ -1,0 +1,80 @@
+================================================================
+PROMPT 15 — COMMERCIAL PRINT / SIGNAGE (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/15-commercial-print-signage.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: RFQ intake -> CRM ->
+follow-up + proof approval -> post-delivery review -> deposit + reorder reminders.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/capabilities. Every outbound
+email is CASL-compliant (consent + unsubscribe). `npm run build` + Vitest stay
+green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — COMMERCIAL PRINT / SIGNAGE / PROMO
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site shows products with turnaround + material facts and captures RFQs with
+lightweight artwork handling. The job has a distinctive middle step — PROOF
+APPROVAL — that gates production. The ops job is to quote the RFQ, get artwork +
+a signed-off proof, produce, deliver, then win the reorder (repeat B2B revenue).
+
+LEAD INTENTS (intents[])
+- "rfq" (P1) — request for quote (may include artwork).
+- "rush" (P1) — time-critical job.
+- "reorder" (P2) — repeat of a past job.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+rfq -> quote -> proof -> production -> delivered -> won / lost.
+
+FOLLOW-UP (followUp)
+Fire immediately. Acknowledge the RFQ, confirm spec/quantity/turnaround, and
+give the artwork-submission instructions (accepted formats, where to send large
+files). A distinct PROOF-APPROVAL request when the proof is ready — production
+doesn't start until it's signed off. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to DELIVERED. Ask once the client has the goods
+in hand. Platform: GOOGLE_REVIEW_URL. No incentives.
+
+INVOICING / REMINDERS (invoice)
+Deposit on approval (especially custom/large runs) + balance on delivery, with
+reminders on the balance. Repurpose for REORDER reminders keyed off the original
+job date (consumables / seasonal signage).
+
+COMPLIANCE FOR OUTBOUND
+Truthful capability / turnaround claims only — never over-promise a press or
+finish you don't run. Respect client artwork/IP. CASL consent + unsubscribe.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- A proof-approval reminder loop (nudge until approved) keyed off the proof-sent
+  date, so jobs don't stall.
+- A reorder-reminder pass in workflow (c) keyed off past delivery dates.
+================================================================
+END PROMPT 15
+================================================================

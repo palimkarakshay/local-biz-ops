@@ -1,0 +1,85 @@
+================================================================
+PROMPT 03 — AUTO DEALERSHIP (OPS)
+================================================================
+Paste this whole file into a Claude Code session. It is self-contained. It is
+the ops twin of marketing-site-creator/prompts/03-auto-dealership.txt.
+
+----------------------------------------------------------------
+SESSION SETUP
+----------------------------------------------------------------
+Two repos are available:
+(1) `local-biz-ops` — THIS kit. Configure `admin/` (ops console) + `workflows/`.
+(2) the marketing site built from the reference kit's matching prompt — it
+    POSTs leads into this kit. DO NOT modify the reference kit.
+
+You are configuring the OPERATIONS that run AFTER the site: e-price / test-drive
+/ trade-in intake -> CRM -> follow-up -> delivery review -> service reminders.
+
+================================================================
+OPS COMMON FOUNDATION (condensed — see 00-common-foundation.txt)
+================================================================
+STACK (wired): Next.js admin = CRM + `/api/leads` intake + follow-up / review /
+job-complete / invoice-reminder endpoints; Resend email + Cloudflare Turnstile
+(same wiring as the site kit); n8n bundle (Webhook -> Verify HMAC -> structure
+with Claude -> dispatch to the admin API), modelled on the site repo's
+docs/N8N_SETUP.md.
+CONFIG-DRIVEN: edit `admin/src/lib/site-config.ts` (identity, review URL, CASL/
+PIPEDA) and `admin/src/lib/ops-config.ts` (intents[], stages[], followUp,
+reviewRequest{trigger,delay,template}, invoice{reminderDays,template}). Templates
+are `{{placeholder}}` strings. Change config, not components.
+ENV: NEXT_PUBLIC_SITE_URL; RESEND_API_KEY/FROM/TO; TURNSTILE keys;
+GOOGLE_REVIEW_URL; OPS_INTAKE_TOKEN (+ OPS_HMAC_SECRET/OPS_INTAKE_URL in n8n).
+With nothing set the kit simulates (Turnstile bypassed, emails logged) at $0.
+QUALITY BAR: NEVER fabricate reviews/testimonials/credentials. Every outbound
+email is CASL-compliant (consent + unsubscribe). Never email restricted data.
+`npm run build` + Vitest stay green.
+
+================================================================
+BUSINESS-SPECIFIC OPS — AUTO DEALERSHIP
+================================================================
+WHAT "AFTER THE SITE" MEANS
+The site shows inventory (VIN/km/Carfax) and captures e-price, test-drive, and
+trade-in valuation leads. Buyers shop several dealers at once, so the first
+honest, specific reply usually wins. The ops job is to send the e-price fast,
+book the test drive, close the deal, then turn the buyer into a repeat
+service-and-referral customer.
+
+LEAD INTENTS (intents[])
+- "e-price" (P1) — wants the out-the-door price on a specific VIN.
+- "test-drive" (P1) — book an appointment.
+- "trade-in" (P2) — wants a valuation.
+- "finance" (P2) — pre-qualify.
+- "general" (P3).
+
+CRM PIPELINE (stages[])
+new -> appointment -> test-drive -> deal -> delivered -> won / lost.
+(delivered is the job-complete equivalent that fires the review request.)
+
+FOLLOW-UP (followUp)
+Fire immediately. For "e-price", quote ALL-IN per OMVIC (price + HST + licensing
+disclosed; no hidden fees) and link to the VIN. For "test-drive", confirm the
+slot + what to bring (licence). Keep finance pre-qual on a secure channel — no
+SIN by email. delayHours: 0.
+
+REVIEW REQUEST (reviewRequest)
+trigger: "job-complete" mapped to DELIVERED. Ask at delivery + a day later.
+Platform: GOOGLE_REVIEW_URL (and optionally a dealer-review site as a second
+link). No incentives for reviews.
+
+INVOICING / REMINDERS (invoice)
+Deposit + balance reminders on a pending deal (reminderDays from the agreed
+date). Then repurpose for SERVICE reminders (oil change / seasonal tire swap /
+warranty milestone) keyed off the delivery date.
+
+COMPLIANCE FOR OUTBOUND
+OMVIC registration # in the signature (TODO until provided) and all-in pricing
+in any price-bearing email. PIPEDA on finance data; secure channel for sensitive
+info. CASL consent + unsubscribe.
+
+VERTICAL AUTOMATIONS (optional n8n additions)
+- Switch in workflow (a) routing "e-price" / "test-drive" to immediate SMS as
+  well as email (speed-to-lead).
+- Second pass of workflow (c) as a seasonal service-reminder schedule.
+================================================================
+END PROMPT 03
+================================================================
