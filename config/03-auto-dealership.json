@@ -1,0 +1,30 @@
+{
+  "vertical": "auto-dealership",
+  "label": "Auto Dealership",
+  "intents": [
+    { "value": "e-price", "label": "Get e-price", "priority": "P1" },
+    { "value": "test-drive", "label": "Book a test drive", "priority": "P1" },
+    { "value": "trade-in", "label": "Trade-in valuation", "priority": "P2" },
+    { "value": "finance", "label": "Finance pre-qualify", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "new", "label": "New" },
+    { "id": "appointment", "label": "Appointment" },
+    { "id": "test-drive", "label": "Test drive" },
+    { "id": "deal", "label": "Deal" },
+    { "id": "delivered", "label": "Delivered" },
+    { "id": "won", "label": "Won", "terminal": true },
+    { "id": "lost", "label": "Lost", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "noSinOrBankingByEmail": true, "secureIntakeLink": true, "truthfulClaimsOnly": true },
+    "regulators": ["OMVIC registration"],
+    "notes": "All-in pricing in any price-bearing email (price + HST + licensing disclosed; no hidden fees). No SIN by email for finance — secure channel."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 1 },
+  "invoice": {
+    "reminderDays": [3, 7, 14],
+    "repurposedAs": "deposit + balance, then seasonal service reminders"
+  }
+}

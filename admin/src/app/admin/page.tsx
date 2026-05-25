@@ -30,15 +30,28 @@ function lastEvent(lead: CrmLead) {
 
 export default async function AdminPage() {
   const leads = (await readLeads()).slice().reverse();
+  const activeFlags = Object.entries(opsConfig.compliance.flags)
+    .filter(([, on]) => on)
+    .map(([flag]) => flag);
 
   return (
     <>
       <h1>CRM</h1>
       <p className="lede">
         {leads.length} lead{leads.length === 1 ? "" : "s"} · vertical:{" "}
-        <code>{opsConfig.vertical}</code>. Follow-ups fire on intake; review requests fire when a
-        job is marked complete.
+        <strong>{opsConfig.label}</strong> (<code>{opsConfig.vertical}</code>). Follow-ups fire on
+        intake; review requests go to {opsConfig.reviewLink.platform} when a job is marked complete.
       </p>
+      {activeFlags.length > 0 ? (
+        <p className="small muted">
+          Compliance flags:{" "}
+          {activeFlags.map((f) => (
+            <span key={f} className="badge" style={{ marginRight: 4 }}>
+              {f}
+            </span>
+          ))}
+        </p>
+      ) : null}
 
       {leads.length === 0 ? (
         <div className="card">

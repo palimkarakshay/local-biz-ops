@@ -1,0 +1,28 @@
+{
+  "vertical": "salon-spa-barber",
+  "label": "Salon / Spa / Barber",
+  "intents": [
+    { "value": "booking", "label": "Book an appointment", "priority": "P1" },
+    { "value": "consult", "label": "Colour / treatment consult", "priority": "P2" },
+    { "value": "gift-card", "label": "Gift card", "priority": "P3" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "inquiry", "label": "Inquiry" },
+    { "id": "booked", "label": "Booked" },
+    { "id": "seen", "label": "Seen" },
+    { "id": "rebook-due", "label": "Rebook due" },
+    { "id": "won", "label": "Regular", "terminal": true },
+    { "id": "lost", "label": "Lost", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "truthfulClaimsOnly": true },
+    "regulators": ["Public-health personal-service-setting (PSS) standards"],
+    "notes": "No medical claims for aesthetic services. Gift-card terms where relevant."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 0 },
+  "invoice": {
+    "reminderDays": [28, 42],
+    "repurposedAs": "rebooking cadence (weeks after last visit) + no-show / late-cancel deposit"
+  }
+}

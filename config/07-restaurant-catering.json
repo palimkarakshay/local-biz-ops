@@ -1,0 +1,28 @@
+{
+  "vertical": "restaurant-catering",
+  "label": "Restaurant / Catering",
+  "intents": [
+    { "value": "catering", "label": "Catering quote", "priority": "P1" },
+    { "value": "reservation", "label": "Large-party reservation", "priority": "P2" },
+    { "value": "event", "label": "Private event / buyout", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "inquiry", "label": "Inquiry" },
+    { "id": "quote", "label": "Quote" },
+    { "id": "booked", "label": "Booked" },
+    { "id": "event-complete", "label": "Event complete" },
+    { "id": "won", "label": "Won", "terminal": true },
+    { "id": "lost", "label": "Lost", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "allergenDisclaimer": true, "truthfulClaimsOnly": true },
+    "regulators": [],
+    "notes": "Include the allergen disclaimer on every menu/quote email. Keep advertised hours in sync with Google Business."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 1 },
+  "invoice": {
+    "reminderDays": [3, 7, 14],
+    "repurposedAs": "deposit to hold the date + balance due before/at the event"
+  }
+}

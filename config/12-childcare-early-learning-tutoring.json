@@ -1,0 +1,28 @@
+{
+  "vertical": "childcare-early-learning-tutoring",
+  "label": "Childcare / Early Learning / Tutoring",
+  "intents": [
+    { "value": "tour", "label": "Book a tour", "priority": "P1" },
+    { "value": "waitlist", "label": "Join the waitlist", "priority": "P1" },
+    { "value": "enrollment", "label": "Enrollment", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "inquiry", "label": "Inquiry" },
+    { "id": "tour-booked", "label": "Tour booked" },
+    { "id": "waitlist", "label": "Waitlist" },
+    { "id": "enrolled", "label": "Enrolled" },
+    { "id": "active", "label": "Active", "terminal": true },
+    { "id": "withdrawn", "label": "Withdrawn", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "minimalChildDataByEmail": true, "secureIntakeLink": true },
+    "regulators": ["CCEYA + Ministry licensing", "CWELCC (where applicable)", "RECE staff + Vulnerable Sector Checks"],
+    "notes": "Never put a child's details in an email body — link to a secure enrollment form. Reassuring, non-pressuring tone."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 21 },
+  "invoice": {
+    "reminderDays": [-3, 1, 5],
+    "repurposedAs": "recurring tuition reminders (CWELCC-aware) + gentle overdue nudge"
+  }
+}

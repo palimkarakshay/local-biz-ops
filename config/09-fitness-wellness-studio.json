@@ -1,0 +1,28 @@
+{
+  "vertical": "fitness-wellness-studio",
+  "label": "Fitness / Wellness Studio",
+  "intents": [
+    { "value": "free-trial", "label": "Book a free trial", "priority": "P1" },
+    { "value": "membership", "label": "Membership / pricing", "priority": "P2" },
+    { "value": "class-info", "label": "Class / schedule question", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "inquiry", "label": "Inquiry" },
+    { "id": "trial-booked", "label": "Trial booked" },
+    { "id": "trial-attended", "label": "Trial attended" },
+    { "id": "member", "label": "Member" },
+    { "id": "at-risk", "label": "At risk" },
+    { "id": "churned", "label": "Churned", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "secureIntakeLink": true, "truthfulClaimsOnly": true },
+    "regulators": ["Ontario Consumer Protection Act (membership/cancellation terms)"],
+    "notes": "Complete the PAR-Q / waiver before activity. No medical or outcome guarantees."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 14 },
+  "invoice": {
+    "reminderDays": [-2, 1, 4],
+    "repurposedAs": "recurring membership dues + failed-payment dunning"
+  }
+}

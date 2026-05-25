@@ -1,0 +1,28 @@
+{
+  "vertical": "veterinary-pet-services",
+  "label": "Veterinary / Pet Services",
+  "intents": [
+    { "value": "emergency", "label": "Emergency", "priority": "P1" },
+    { "value": "new-client", "label": "New client", "priority": "P1" },
+    { "value": "appointment", "label": "Appointment / grooming", "priority": "P2" },
+    { "value": "general", "label": "General question", "priority": "P3" }
+  ],
+  "stages": [
+    { "id": "inquiry", "label": "Inquiry" },
+    { "id": "booked", "label": "Booked" },
+    { "id": "seen", "label": "Seen" },
+    { "id": "recall-due", "label": "Recall due" },
+    { "id": "won", "label": "Active client", "terminal": true },
+    { "id": "lost", "label": "Lost", "terminal": true }
+  ],
+  "compliance": {
+    "flags": { "secureIntakeLink": true, "reviewNeedsApproval": true },
+    "regulators": ["CVO (College of Veterinarians of Ontario)"],
+    "notes": "CVO advertising rules constrain claims/testimonials — keep the review ask factual. Provide emergency / after-hours guidance."
+  },
+  "reviewRequest": { "trigger": "job-complete", "delayDays": 1 },
+  "invoice": {
+    "reminderDays": [7, 14, 30],
+    "repurposedAs": "visit balance + vaccination / wellness recall reminders"
+  }
+}
