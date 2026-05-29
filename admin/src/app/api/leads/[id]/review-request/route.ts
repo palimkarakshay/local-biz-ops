@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getLead, markReviewRequest, updateLead } from "@/lib/crm";
 import { sendReviewRequest } from "@/lib/mail";
+import { requireAdminApi } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,9 +10,12 @@ export const dynamic = "force-dynamic";
  * Send the review request for a lead (the review-request step). Idempotent:
  * skips if already sent unless `?force=1`, so n8n workflow (b) can fire it
  * safely even if the admin UI already sent it. The admin "Send" button uses a
- * server action and always sends (explicit operator intent).
+ * server action and always sends (explicit operator intent). Admin-only.
  */
 export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
+  const raw = await request.text();
+  const denied = await requireAdminApi(request, raw);
+  if (denied) return denied;
   const { id } = await ctx.params;
   const force = new URL(request.url).searchParams.get("force");
   const lead = await getLead(id);

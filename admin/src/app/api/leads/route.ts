@@ -4,12 +4,19 @@ import { opsConfig } from "@/lib/ops-config";
 import { appendLead, createLead, markFollowUp, markReviewRequest, readLeads, recordEvent } from "@/lib/crm";
 import { sendFollowUp, sendOperatorNotification, sendReviewRequest, verifyTurnstile } from "@/lib/mail";
 import { verifyOpsSignature } from "@/lib/security";
+import { requireAdminApi } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** List the CRM (used by the admin UI fallback and by n8n debugging). */
-export async function GET() {
+/**
+ * List the CRM. This returns every lead's PII, so it requires an authenticated
+ * admin caller (operator session or trusted server-to-server token/HMAC) —
+ * unlike the public POST intake below.
+ */
+export async function GET(request: Request) {
+  const denied = await requireAdminApi(request);
+  if (denied) return denied;
   return NextResponse.json({ leads: await readLeads() });
 }
 

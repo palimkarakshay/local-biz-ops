@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { deriveDueInvoices, getLead, recordEvent, updateLead } from "@/lib/crm";
 import { sendInvoiceReminder } from "@/lib/mail";
+import { requireAdminApi } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,9 +10,12 @@ export const dynamic = "force-dynamic";
  * Send the invoice reminder for the lead's highest unfired checkpoint, then
  * record it so it can't fire twice. Idempotent: if no checkpoint is due it
  * no-ops. n8n workflow (c) calls this for each id returned by
- * `GET /api/invoices/overdue`.
+ * `GET /api/invoices/overdue`. Admin-only.
  */
-export async function POST(_request: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
+  const raw = await request.text();
+  const denied = await requireAdminApi(request, raw);
+  if (denied) return denied;
   const { id } = await ctx.params;
   const lead = await getLead(id);
   if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });

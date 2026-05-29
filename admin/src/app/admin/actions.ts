@@ -4,8 +4,19 @@ import { revalidatePath } from "next/cache";
 import { getLead, markFollowUp, markReviewRequest, setStage, updateLead } from "@/lib/crm";
 import { opsConfig } from "@/lib/ops-config";
 import { sendFollowUp, sendReviewRequest } from "@/lib/mail";
+import { hasAdminSession } from "@/lib/auth";
+
+/**
+ * Every server action below mutates CRM state. Server Actions are POST
+ * endpoints reachable by anyone who can guess the action id, so each one
+ * re-verifies the operator's signed admin session server-side before acting.
+ */
+async function assertAdmin(): Promise<boolean> {
+  return hasAdminSession();
+}
 
 export async function fireFollowUpAction(formData: FormData) {
+  if (!(await assertAdmin())) return;
   const id = String(formData.get("id"));
   const lead = await getLead(id);
   if (!lead) return;
@@ -15,6 +26,7 @@ export async function fireFollowUpAction(formData: FormData) {
 }
 
 export async function fireReviewRequestAction(formData: FormData) {
+  if (!(await assertAdmin())) return;
   const id = String(formData.get("id"));
   const lead = await getLead(id);
   if (!lead) return;
@@ -24,6 +36,7 @@ export async function fireReviewRequestAction(formData: FormData) {
 }
 
 export async function markJobCompleteAction(formData: FormData) {
+  if (!(await assertAdmin())) return;
   const id = String(formData.get("id"));
   const lead = await getLead(id);
   if (!lead) return;
@@ -42,6 +55,7 @@ export async function markJobCompleteAction(formData: FormData) {
 }
 
 export async function setStageAction(formData: FormData) {
+  if (!(await assertAdmin())) return;
   const id = String(formData.get("id"));
   const stage = String(formData.get("stage"));
   await updateLead(id, (l) => setStage(l, stage));
