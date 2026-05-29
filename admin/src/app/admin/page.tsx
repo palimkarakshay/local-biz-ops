@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { readLeads } from "@/lib/crm";
 import { opsConfig } from "@/lib/ops-config";
 import type { CrmLead } from "@/lib/schemas";
+import { hasAdminSession } from "@/lib/auth";
 import { fireFollowUpAction, fireReviewRequestAction, markJobCompleteAction, setStageAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +31,11 @@ function lastEvent(lead: CrmLead) {
 }
 
 export default async function AdminPage() {
+  // The CRM renders lead PII and exposes the mutating server actions — only an
+  // authenticated operator may see it. No valid session → bounce to login.
+  if (!(await hasAdminSession())) {
+    redirect("/admin/login");
+  }
   const leads = (await readLeads()).slice().reverse();
   const activeFlags = Object.entries(opsConfig.compliance.flags)
     .filter(([, on]) => on)
